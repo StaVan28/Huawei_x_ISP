@@ -299,7 +299,7 @@ atoi_cdecl      push rbp
 ;                RDI -- start of buffer
 ;                RBX -- radix
 ;        Stack:  NONE
-;        Consts: NONE
+;        Consts: DIGIT_TABLE
 ; Call:  NONE
 ; Exit:  (RAX = -1 if ERROR)
 ; Note:  '0' NECESSARILY NEEDED!!!!1!1!
@@ -330,7 +330,7 @@ itoa_reg        push rdi                        ; remember start buff
                 mov rcx, rdx
                 pop rdx
 
-.base_2_8_16:   mov  rax, rdx
+.base_2:        mov  rax, rdx
                 shr  rax, cl
                 push rax
                 shl  rax, cl
@@ -349,7 +349,7 @@ itoa_reg        push rdi                        ; remember start buff
                 pop rdx                         ; for cycle
 
                 cmp rdx, 0
-                jne .base_2_8_16
+                jne .base_2
                 jmp .add_last_sym
 
 .base_10:
@@ -395,6 +395,7 @@ itoa_reg        push rdi                        ; remember start buff
                 dec rdi
 
                 pop rsi                         ; get out start buff
+                xor rax, rax
 
 .reverse_str:   mov   al , [rsi]
                 mov   ah , [rdi]
@@ -411,6 +412,40 @@ itoa_reg        push rdi                        ; remember start buff
                 dec rax
 
 .exit:          ret
+
+;----------------------------------------------------
+; itoa_cdecl () -- int to ASCII (radix 2, 4, 8, 10, 16)
+;
+; Entry: Regs:   NONE
+;        Stack:  1 push -- input number
+;                2 push -- start of buffer
+;                3 push -- radix
+;        Consts: DIGIT_TABLE
+; Call:  NONE
+; Exit:  (RAX = -1 if ERROR)
+; Note:  '0' NECESSARILY NEEDED!!!!1!1!
+;        work onle with 2, 4, 8, 10, 16 bases
+;        if base = 2/4/8/16, RCX > 0
+; Destr: RAX RCX
+;----------------------------------------------------
+itoa_cdecl      push rbp
+                mov  rbp, rsp
+                push rbx
+                push rdx
+                push rsi
+                push rdi
+
+                mov rcx, [rbp + 32]
+                mov rdi, [rbp + 24]
+                mov rbx, [rbp + 16]
+                call itoa_reg
+
+                pop rdi
+                pop rsi
+                pop rdx
+                pop rbx
+                pop rbp
+                ret
 
 ;----------------------------------;
 ;        DATA                      ;
