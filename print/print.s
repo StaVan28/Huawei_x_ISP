@@ -4,8 +4,6 @@
 
 %include "string.s"
 
-extern _calloc, _realloc, _free
-
 ;----------------------------------;
 ;        TEXT                      ;
 ;----------------------------------;
@@ -14,15 +12,17 @@ section .text
 
 global _start
 
-_start:         mov  rdi, my_printf_str
-                mov  rsi, 12345
-                mov  rdx, 12345
-                mov  r10, 12345
-                mov  r9 , 12345
-                mov  r8 , 12345
-                push 12345
+_start:         
+                push hello_str
+                push 10000
+                mov  r9 , 28
+                mov  r8 , 28 
+                mov  r10, 28
+                mov  rdx, '$'
+                mov  rsi, 28
+                mov  rdi, my_printf_str
                 call my_printf
-                add  rsp, 8
+                add  rsp, 16
 
                 mov rax, 0x3C
                 xor rdi, rdi
@@ -41,13 +41,13 @@ _start:         mov  rdi, my_printf_str
 ; my_printf () -- print string in stdout
 ; {stdcall convention}
 ;
-; Entry: Regs:   RDI -- string
-;                RSI -- 1 arg
-;                RDX -- 2 arg
-;                R10 -- 3 arg
+; Entry: Regs:   R9  -- 5 arg
 ;                R8  -- 4 arg
-;                R9  -- 5 arg
-;        Stack:  all others are pushed onto the stack
+;                R10 -- 3 arg
+;                RDX -- 2 arg
+;                RSI -- 1 arg
+;                RDI -- string
+;        Stack:  all others are pushed onto the stack in back order
 ;        Consts: NONE
 ; Call:  NONE
 ; Exit:  Upon successful return, these functions return the number of
@@ -57,6 +57,7 @@ _start:         mov  rdi, my_printf_str
 ; Note:  '0' NECESSARILY NEEDED!!!!1!1!
 ; Destr: RAX RBX RCX 
 ;----------------------------------------------------
+global my_printf
 my_printf       push rbp
                 mov  rbp, rsp
 
@@ -69,7 +70,7 @@ my_printf       push rbp
 
                 pop rsi                 ; rsi -- string    V
                 mov rdi, static_buff    ; rdi -- malloc  > for movs* cmds
-                mov  r9, static_buff    ; debug
+                mov  r9, static_buff
 
                 xor rdx, rdx            ; arg counter
 
@@ -93,29 +94,29 @@ my_printf       push rbp
                 mov rax, [jump_table + 8 * (rax - 'b') ]
                 jmp rax
 
-.spec_b:         jmp .b_print
-.spec_c:         jmp .c_print
-.spec_d:         jmp .d_print
-.spec_e:         jmp .skip_place
-.spec_f:         jmp .f_print
-.spec_g:         jmp .skip_place
-.spec_h:         jmp .skip_place
-.spec_i:         jmp .skip_place
-.spec_j:         jmp .skip_place
-.spec_k:         jmp .skip_place
-.spec_l:         jmp .skip_place
-.spec_m:         jmp .skip_place
-.spec_n:         jmp .skip_place
-.spec_o:         jmp .o_print
-.spec_p:         jmp .skip_place
-.spec_q:         jmp .skip_place
-.spec_r:         jmp .skip_place
-.spec_s:         jmp .skip_place
-.spec_t:         jmp .skip_place
-.spec_u:         jmp .skip_place
-.spec_v:         jmp .skip_place
-.spec_w:         jmp .skip_place
-.spec_x:         jmp .x_print
+.spec_b:        jmp .b_print
+.spec_c:        jmp .c_print
+.spec_d:        jmp .d_print
+.spec_e:        jmp .skip_place
+.spec_f:        jmp .f_print
+.spec_g:        jmp .skip_place
+.spec_h:        jmp .skip_place
+.spec_i:        jmp .skip_place
+.spec_j:        jmp .skip_place
+.spec_k:        jmp .skip_place
+.spec_l:        jmp .skip_place
+.spec_m:        jmp .skip_place
+.spec_n:        jmp .skip_place
+.spec_o:        jmp .o_print
+.spec_p:        jmp .skip_place
+.spec_q:        jmp .skip_place
+.spec_r:        jmp .skip_place
+.spec_s:        jmp .s_print
+.spec_t:        jmp .skip_place
+.spec_u:        jmp .skip_place
+.spec_v:        jmp .skip_place
+.spec_w:        jmp .skip_place
+.spec_x:        jmp .x_print
 
 .skip_place:    inc rsi
                 jmp .pars_str
@@ -223,9 +224,7 @@ my_printf       push rbp
                 inc  rsi
                 jmp .pars_str
 
-.proc_print:    call get_adr_arg
-
-                ; check 4096 overflow
+.proc_print:    ; check 4096 overflow
                 mov byte [rdi], '%'
                 inc  rdi
                 inc  rsi
@@ -318,9 +317,11 @@ jump_table      dq      my_printf.spec_b, my_printf.spec_c, my_printf.spec_d, my
                         my_printf.spec_v, my_printf.spec_w, my_printf.spec_x
 
 static_buff     times   4096 db 0
-empty_str       times   32 db 0
+empty_str       times   64 db 0
 
+love_str        db      "love", 0
 hello_str       db      'Hello, world!',  0
 len_hello_str   equ     $ - hello_str
 
-my_printf_str   db      '{proc = [%%]}}, {b = [%b]}}, {f = [%f]}, {o = [%o]}, {d = [%d]}}, {x = [%x]}}', 0x0a, 0
+my_printf_str   db      "{b = [%b]}, {c = [%c]}, {d = [%d]}, {f = [%f]},", 0x0a, \
+                        "{o = [%o]}, {x = [%x]}, {pr = [%%], {s = [%s]}}", 0x0a, 0
