@@ -5,19 +5,39 @@
 %include "string.s"
 
 ;----------------------------------;
+;        DIFINE                    ;
+;----------------------------------;
+
+%macro digit_print 1
+                call get_adr_arg
+
+                ; overflow 4096
+                mov  rbx, [rbx]
+                push rbx
+                push rdi
+                push %1
+                call itoa_cdecl
+                add  rsp, 24
+
+                add  rdi, rax
+                inc  rsi
+                jmp .pars_str
+%endmacro
+
+;----------------------------------;
 ;        TEXT                      ;
 ;----------------------------------;
 
 section .text
 
-global _start
+;global _start
 
 _start:         
                 push hello_str
                 push 10000
                 mov  r9 , 28
                 mov  r8 , 28 
-                mov  r10, 28
+                mov  rcx, 28
                 mov  rdx, '$'
                 mov  rsi, 28
                 mov  rdi, my_printf_str
@@ -43,7 +63,7 @@ _start:
 ;
 ; Entry: Regs:   R9  -- 5 arg
 ;                R8  -- 4 arg
-;                R10 -- 3 arg
+;                RCX -- 3 arg
 ;                RDX -- 2 arg
 ;                RSI -- 1 arg
 ;                RDI -- string
@@ -54,8 +74,8 @@ _start:
 ;        characters printed {RAX} (excluding the null byte used to end output to
 ;        strings).
 ;        If an output error is encountered, a negative value is returned in {RAX}.
-; Note:  '0' NECESSARILY NEEDED!!!!1!1!
-; Destr: RAX RBX RCX 
+; Note:  '0' IS NECESSARILY NEEDED!!!!1!1!
+; Destr: RAX RBX RCX
 ;----------------------------------------------------
 global my_printf
 my_printf       push rbp
@@ -63,14 +83,14 @@ my_printf       push rbp
 
                 push r9
                 push r8
-                push r10
+                push rcx
                 push rdx
                 push rsi
                 push rdi
 
                 pop rsi                 ; rsi -- string    V
                 mov rdi, static_buff    ; rdi -- malloc  > for movs* cmds
-                mov  r9, static_buff
+                mov r9 , static_buff
 
                 xor rdx, rdx            ; arg counter
 
@@ -86,37 +106,10 @@ my_printf       push rbp
 
 .spec_format:   inc rsi
 
-                cmp byte [rsi], '%'
-                je  .proc_print
-
                 xor rax,  rax
                 mov  al, [rsi]
-                mov rax, [jump_table + 8 * (rax - 'b') ]
+                mov rax, [jump_table + 8 * (rax - ' ') ]
                 jmp rax
-
-.spec_b:        jmp .b_print
-.spec_c:        jmp .c_print
-.spec_d:        jmp .d_print
-.spec_e:        jmp .skip_place
-.spec_f:        jmp .f_print
-.spec_g:        jmp .skip_place
-.spec_h:        jmp .skip_place
-.spec_i:        jmp .skip_place
-.spec_j:        jmp .skip_place
-.spec_k:        jmp .skip_place
-.spec_l:        jmp .skip_place
-.spec_m:        jmp .skip_place
-.spec_n:        jmp .skip_place
-.spec_o:        jmp .o_print
-.spec_p:        jmp .skip_place
-.spec_q:        jmp .skip_place
-.spec_r:        jmp .skip_place
-.spec_s:        jmp .s_print
-.spec_t:        jmp .skip_place
-.spec_u:        jmp .skip_place
-.spec_v:        jmp .skip_place
-.spec_w:        jmp .skip_place
-.spec_x:        jmp .x_print
 
 .skip_place:    inc rsi
                 jmp .pars_str
@@ -154,77 +147,17 @@ my_printf       push rbp
                 inc  rsi
                 jmp .pars_str
 
-.d_print:       call get_adr_arg
+.x_print:       digit_print 16
 
-                ; overflow 4096
-                mov  rbx, [rbx]
-                push rbx
-                push rdi
-                push 10
-                call itoa_cdecl
-                add  rsp, 24
+.d_print:       digit_print 10
 
-                add  rdi, rax
-                inc  rsi
-                jmp .pars_str
+.o_print:       digit_print 8
 
-.x_print:       call get_adr_arg
+.f_print:       digit_print 4
 
-                ; overflow 4096
-                mov  rbx, [rbx]
-                push rbx
-                push rdi
-                push 16
-                call itoa_cdecl
-                add  rsp, 24
+.b_print:       digit_print 2
 
-                add  rdi, rax
-                inc  rsi
-                jmp .pars_str
-
-.o_print:       call get_adr_arg
-
-                ; overflow 4096
-                mov  rbx, [rbx]
-                push rbx
-                push rdi
-                push 8
-                call itoa_cdecl
-                add  rsp, 24
-
-                add  rdi, rax
-                inc  rsi
-                jmp .pars_str
-
-.f_print:       call get_adr_arg
-
-                ; overflow 4096
-                mov  rbx, [rbx]
-                push rbx
-                push rdi
-                push 4
-                call itoa_cdecl
-                add  rsp, 24
-
-                add  rdi, rax
-                inc  rsi
-                jmp .pars_str
-
-.b_print:       call get_adr_arg
-
-                ; overflow 4096
-                mov  rbx, [rbx]
-                push rbx
-                push rdi
-                push 2
-                call itoa_cdecl
-                add  rsp, 24
-
-                add  rdi, rax
-                inc  rsi
-                jmp .pars_str
-
-.proc_print:    ; check 4096 overflow
+.prec_print:    ; check 4096 overflow
                 mov byte [rdi], '%'
                 inc  rdi
                 inc  rsi
@@ -256,7 +189,7 @@ my_printf       push rbp
 ; Call:  NONE
 ; Exit:  RAX -- On success, the number of bytes written is returned.  
 ;               On error, -1 is returned.
-; Note:  -- '0' NECESSARILY NEEDED!!!!1!1!
+; Note:  -- '0' NECESSARILY NEEDED!!!!1!1!111111
 ; Destr: RAX
 ;----------------------------------------------------
 print_buff      push rdi
@@ -309,19 +242,37 @@ get_adr_arg     xor rbx, rbx
 
 section .data
 
-jump_table      dq      my_printf.spec_b, my_printf.spec_c, my_printf.spec_d, my_printf.spec_e, \
-                        my_printf.spec_f, my_printf.spec_g, my_printf.spec_h, my_printf.spec_i, \
-                        my_printf.spec_j, my_printf.spec_k, my_printf.spec_l, my_printf.spec_m, \
-                        my_printf.spec_n, my_printf.spec_o, my_printf.spec_p, my_printf.spec_q, \
-                        my_printf.spec_r, my_printf.spec_s, my_printf.spec_t, my_printf.spec_u, \
-                        my_printf.spec_v, my_printf.spec_w, my_printf.spec_x
+jump_table      dq      my_printf.skip_place, my_printf.skip_place, \
+                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.prec_print, \
+                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
+                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
+                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
+                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
+                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
+                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
+                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
+                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
+                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
+                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
+                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
+                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
+                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
+                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
+                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
+                        my_printf.b_print   , my_printf.c_print   , my_printf.d_print   , my_printf.skip_place, \
+                        my_printf.f_print   , my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
+                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
+                        my_printf.skip_place, my_printf.o_print   , my_printf.skip_place, my_printf.skip_place, \
+                        my_printf.skip_place, my_printf.s_print   , my_printf.skip_place, my_printf.skip_place, \
+                        my_printf.skip_place, my_printf.skip_place, my_printf.x_print   , my_printf.skip_place, \
+                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place
 
 static_buff     times   4096 db 0
-empty_str       times   64 db 0
+empty_str       times   64   db 0
 
-love_str        db      "love", 0
-hello_str       db      'Hello, world!',  0
+love_str        db      "love"         , 0
+hello_str       db      'Hello, world!', 0
 len_hello_str   equ     $ - hello_str
 
-my_printf_str   db      "{b = [%b]}, {c = [%c]}, {d = [%d]}, {f = [%f]},", 0x0a, \
-                        "{o = [%o]}, {x = [%x]}, {pr = [%%], {s = [%s]}}", 0x0a, 0
+my_printf_str   db      "{b = [%b]}, {c = [%c]}, {d = [%d]}, {f = [%f]}," , 0x0a, \
+                        "{o = [%o]}, {x = [%x]}, {pr = [%h]}, {s = [%s]}}", 0x0a, 0

@@ -2,7 +2,7 @@ all: launch
 
 .PHONY: launch link comp asm_to_c clean edb
 
-launch: link_asm
+launch: link_c
 	valgrind ./print
 
 link_asm: c_to_asm
