@@ -302,6 +302,7 @@ atoi_cdecl      push rbp
 ;        Consts: DIGIT_TABLE
 ; Call:  NONE
 ; Exit:  (RAX = -1 if ERROR)
+;         RBX -- num of convert symb
 ; Note:  '0' NECESSARILY NEEDED!!!!1!1!
 ;        work onle with 2, 4, 8, 10, 16 bases
 ;        if base = 2/4/8/16, RCX > 0
@@ -396,6 +397,9 @@ itoa_reg        push rdi                        ; remember start buff
 
                 pop rsi                         ; get out start buff
                 xor rax, rax
+                mov rbx, rdi
+                sub rbx, rsi
+                inc rbx
 
 .reverse_str:   mov   al , [rsi]
                 mov   ah , [rdi]
@@ -422,7 +426,7 @@ itoa_reg        push rdi                        ; remember start buff
 ;                3 push -- radix
 ;        Consts: DIGIT_TABLE
 ; Call:  NONE
-; Exit:  (RAX = -1 if ERROR)
+; Exit:  RAX -- num of convert symb
 ; Note:  '0' NECESSARILY NEEDED!!!!1!1!
 ;        work onle with 2, 4, 8, 10, 16 bases
 ;        if base = 2/4/8/16, RCX > 0
@@ -439,6 +443,7 @@ itoa_cdecl      push rbp
                 mov rdi, [rbp + 24]
                 mov rbx, [rbp + 16]
                 call itoa_reg
+                mov rax, rbx
 
                 pop rdi
                 pop rsi

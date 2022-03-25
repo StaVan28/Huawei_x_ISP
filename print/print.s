@@ -15,13 +15,12 @@ section .text
 global _start
 
 _start:         mov  rdi, my_printf_str
-                mov  rsi, hello_str
-                mov  rdx, "\"
-                mov  r10, ')'
-                mov  r8, '$'
-                mov  r9, '('
+                mov  rsi, 12345
+                mov  rdx, 12345
+                mov  r10, 12345
+                mov  r9 , 12345
+                mov  r8 , 12345
                 call my_printf
-                add rsp, 8
 
                 mov rax, 0x3C
                 xor rdi, rdi
@@ -90,14 +89,33 @@ my_printf       push rbp
                 cmp byte [rsi], 's'
                 je  .s_print
 
+                cmp byte [rsi], 'd'
+                je  .d_print
+
+                cmp byte [rsi], 'x'
+                je  .x_print
+
+                cmp byte [rsi], 'o'
+                je  .o_print
+
+                cmp byte [rsi], 'f'
+                je  .f_print
+
+                cmp byte [rsi], 'b'
+                je  .b_print
+
+                cmp byte [rsi], '%'
+                je  .proc_print
+
                 jmp .error
 
 .c_print:       call get_adr_arg
-                mov  rcx, [rbx]
 
+                mov  rcx, [rbx]
                 ; check 4096 overflow
                 mov [rdi], rcx
                 inc  rdi
+
                 inc  rsi
                 jmp .pars_str
 
@@ -121,6 +139,84 @@ my_printf       push rbp
                 loop .loop_str
                 pop  rdx
 
+                inc  rsi
+                jmp .pars_str
+
+.d_print:       call get_adr_arg
+
+                ; overflow 4096
+                mov  rbx, [rbx]
+                push rbx
+                push rdi
+                push 10
+                call itoa_cdecl
+                add  rsp, 24
+
+                add  rdi, rax
+                inc  rsi
+                jmp .pars_str
+
+.x_print:       call get_adr_arg
+
+                ; overflow 4096
+                mov  rbx, [rbx]
+                push rbx
+                push rdi
+                push 16
+                call itoa_cdecl
+                add  rsp, 24
+
+                add  rdi, rax
+                inc  rsi
+                jmp .pars_str
+
+.o_print:       call get_adr_arg
+
+                ; overflow 4096
+                mov  rbx, [rbx]
+                push rbx
+                push rdi
+                push 8
+                call itoa_cdecl
+                add  rsp, 24
+
+                add  rdi, rax
+                inc  rsi
+                jmp .pars_str
+
+.f_print:       call get_adr_arg
+
+                ; overflow 4096
+                mov  rbx, [rbx]
+                push rbx
+                push rdi
+                push 4
+                call itoa_cdecl
+                add  rsp, 24
+
+                add  rdi, rax
+                inc  rsi
+                jmp .pars_str
+
+.b_print:       call get_adr_arg
+
+                ; overflow 4096
+                mov  rbx, [rbx]
+                push rbx
+                push rdi
+                push 2
+                call itoa_cdecl
+                add  rsp, 24
+
+                add  rdi, rax
+                inc  rsi
+                jmp .pars_str
+
+.proc_print:    call get_adr_arg
+
+                ; check 4096 overflow
+                mov byte [rdi], '%'
+                inc  rdi
                 inc  rsi
                 jmp .pars_str
 
@@ -210,4 +306,4 @@ empty_str       times   32 db 0
 hello_str       db      'Hello, world!',  0
 len_hello_str   equ     $ - hello_str
 
-my_printf_str   db      '{s = [%s]}, {c = [%c]}, {c = [%c]}, {c = [%c]}, {c = [%c]}', 0x0a, 0
+my_printf_str   db      '{proc = [%%]}}, {b = [%b]}}, {f = [%f]}, {o = [%o]}, {d = [%d]}}, {x = [%x]}}', 0x0a, 0
