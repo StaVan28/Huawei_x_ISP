@@ -20,7 +20,9 @@ _start:         mov  rdi, my_printf_str
                 mov  r10, 12345
                 mov  r9 , 12345
                 mov  r8 , 12345
+                push 12345
                 call my_printf
+                add  rsp, 8
 
                 mov rax, 0x3C
                 xor rdi, rdi
@@ -75,39 +77,48 @@ my_printf       push rbp
                 je  .prep_exit
 
                 cmp byte [rsi], '%'
-                je  .jmp_table
+                je  .spec_format
 
                 cld
                 movsb 
                 jmp .pars_str
 
-.jmp_table:     inc rsi
-
-                cmp byte [rsi], 'c'
-                je  .c_print
-
-                cmp byte [rsi], 's'
-                je  .s_print
-
-                cmp byte [rsi], 'd'
-                je  .d_print
-
-                cmp byte [rsi], 'x'
-                je  .x_print
-
-                cmp byte [rsi], 'o'
-                je  .o_print
-
-                cmp byte [rsi], 'f'
-                je  .f_print
-
-                cmp byte [rsi], 'b'
-                je  .b_print
+.spec_format:   inc rsi
 
                 cmp byte [rsi], '%'
                 je  .proc_print
 
-                jmp .error
+                xor rax,  rax
+                mov  al, [rsi]
+                mov rax, [jump_table + 8 * (rax - 'b') ]
+                jmp rax
+
+.spec_b:         jmp .b_print
+.spec_c:         jmp .c_print
+.spec_d:         jmp .d_print
+.spec_e:         jmp .skip_place
+.spec_f:         jmp .f_print
+.spec_g:         jmp .skip_place
+.spec_h:         jmp .skip_place
+.spec_i:         jmp .skip_place
+.spec_j:         jmp .skip_place
+.spec_k:         jmp .skip_place
+.spec_l:         jmp .skip_place
+.spec_m:         jmp .skip_place
+.spec_n:         jmp .skip_place
+.spec_o:         jmp .o_print
+.spec_p:         jmp .skip_place
+.spec_q:         jmp .skip_place
+.spec_r:         jmp .skip_place
+.spec_s:         jmp .skip_place
+.spec_t:         jmp .skip_place
+.spec_u:         jmp .skip_place
+.spec_v:         jmp .skip_place
+.spec_w:         jmp .skip_place
+.spec_x:         jmp .x_print
+
+.skip_place:    inc rsi
+                jmp .pars_str
 
 .c_print:       call get_adr_arg
 
@@ -299,8 +310,14 @@ get_adr_arg     xor rbx, rbx
 
 section .data
 
-static_buff     times   4096 db 0
+jump_table      dq      my_printf.spec_b, my_printf.spec_c, my_printf.spec_d, my_printf.spec_e, \
+                        my_printf.spec_f, my_printf.spec_g, my_printf.spec_h, my_printf.spec_i, \
+                        my_printf.spec_j, my_printf.spec_k, my_printf.spec_l, my_printf.spec_m, \
+                        my_printf.spec_n, my_printf.spec_o, my_printf.spec_p, my_printf.spec_q, \
+                        my_printf.spec_r, my_printf.spec_s, my_printf.spec_t, my_printf.spec_u, \
+                        my_printf.spec_v, my_printf.spec_w, my_printf.spec_x
 
+static_buff     times   4096 db 0
 empty_str       times   32 db 0
 
 hello_str       db      'Hello, world!',  0
