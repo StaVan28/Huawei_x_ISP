@@ -30,6 +30,7 @@
 
 section .text
 
+; comment for call in c
 ;global _start
 
 _start:         
@@ -89,18 +90,18 @@ my_printf       push rbp
                 push rdi
 
                 pop rsi                 ; rsi -- string    V
-                mov rdi, static_buff    ; rdi -- malloc  > for movs* cmds
+                mov rdi, static_buff    ; rdi -- static buff for copy
                 mov r9 , static_buff
 
                 xor rdx, rdx            ; arg counter
 
+                cld
 .pars_str:      cmp byte [rsi], 0
                 je  .prep_exit
 
                 cmp byte [rsi], '%'
                 je  .spec_format
 
-                cld
                 movsb 
                 jmp .pars_str
 
@@ -108,7 +109,17 @@ my_printf       push rbp
 
                 xor rax,  rax
                 mov  al, [rsi]
-                mov rax, [jump_table + 8 * (rax - ' ') ]
+
+                cmp rax, '%'
+                je  .prec_print
+
+                cmp rax, 'b'
+                jl  .skip_place
+
+                cmp rax, 'x'
+                ja  .skip_place
+
+                mov rax, [jump_table + 8 * (rax - 'b')]
                 jmp rax
 
 .skip_place:    inc rsi
@@ -219,7 +230,7 @@ print_buff      push rdi
 ;        Consts: NONE
 ; Call:  NONE
 ; Exit:  RBX -- addr arg
-; Note:  -- uses rsp
+; Note:  -- uses RSP
 ; Destr: RBX 
 ;----------------------------------------------------
 get_adr_arg     xor rbx, rbx
@@ -242,30 +253,12 @@ get_adr_arg     xor rbx, rbx
 
 section .data
 
-jump_table      dq      my_printf.skip_place, my_printf.skip_place, \
-                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.prec_print, \
-                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
-                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
-                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
-                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
-                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
-                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
-                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
-                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
-                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
-                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
-                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
-                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
-                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
-                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
-                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
-                        my_printf.b_print   , my_printf.c_print   , my_printf.d_print   , my_printf.skip_place, \
+jump_table      dq      my_printf.b_print   , my_printf.c_print   , my_printf.d_print   , my_printf.skip_place, \
                         my_printf.f_print   , my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
                         my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, \
                         my_printf.skip_place, my_printf.o_print   , my_printf.skip_place, my_printf.skip_place, \
                         my_printf.skip_place, my_printf.s_print   , my_printf.skip_place, my_printf.skip_place, \
-                        my_printf.skip_place, my_printf.skip_place, my_printf.x_print   , my_printf.skip_place, \
-                        my_printf.skip_place, my_printf.skip_place, my_printf.skip_place, my_printf.skip_place
+                        my_printf.skip_place, my_printf.skip_place, my_printf.x_print
 
 static_buff     times   4096 db 0
 empty_str       times   64   db 0
