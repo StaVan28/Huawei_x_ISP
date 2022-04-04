@@ -3,4 +3,5 @@
 *.map
 *.obj
 *.lst
-print
+*.o
+print/print

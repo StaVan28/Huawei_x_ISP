@@ -1,0 +1,1 @@
+# Dos project: draw ramochka on screen
